@@ -10,6 +10,10 @@ namespace ChatApp.Data
 {
     public class ApplicationContext : IdentityDbContext<User>
     {
+        public DbSet<Chat> Chats { get; set; }
+        public DbSet<ChatUser> ChatUsers { get; set; }
+        public DbSet<Message> Messages { get; set; }
+
         public ApplicationContext(DbContextOptions<ApplicationContext> options)
             : base(options)
         {

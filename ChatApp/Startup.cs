@@ -63,10 +63,11 @@ namespace ChatApp
             app.UseStaticFiles();
 
             app.UseRouting();
-
-            app.UseAuthorization();
             app.UseAuthentication();
+            app.UseAuthorization();
 
+            app.UseWebSockets();
+            app.UseMiddleware<ChatWebSocketMiddleware>();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(

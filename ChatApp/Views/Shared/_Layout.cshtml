@@ -24,26 +24,32 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Chats" asp-action="Index">Chats</a>
+                        </li>
 
 
                         @if (User.Identity.IsAuthenticated)
                         {
-                    <li>
-                        <p>@User.Identity.Name</p>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account"> @User.Identity.Name</a>
+                            </li>
+                            <li class="nav-item">
+                                <form method="post" asp-controller="Account" asp-action="LogOff" class="nav-link text-dark">
+                                    <input type="submit" value="Log out" class="form-control" />
+                                </form>
+                            </li>
 
-                        <form method="post" asp-controller="Account" asp-action="LogOff">
-                            <input type="submit" value="Выход" />
-                        </form>
-                    </li>
-                            
                         }
                         else
                         {
-                    <li>
-                        <a asp-controller="Account" asp-action="Login">Вход</a>
-                        <a asp-controller="Account" asp-action="Register">Регистрация</a>
-                    </li>
-                           
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Log in</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Register">Registration</a>
+                            </li>
                         }
 
                     </ul>

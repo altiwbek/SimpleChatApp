@@ -1,0 +1,187 @@
+﻿@inject Microsoft.AspNetCore.Identity.UserManager<User> _userManager
+
+@model ChatApp.Models.Chat
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+@{ string userId = _userManager.GetUserId(User); }
+
+<h1>@Model.Name</h1>
+
+<!-- Button trigger modal -->
+<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#usersSelectModal">
+    Add User to Chat
+</button>
+
+<h5>User in this chat</h5>
+<ul>
+    @foreach (var chatUser in Model.ChatUsers)
+    {
+        <li>@chatUser.User.UserName</li>
+    }
+
+</ul>
+
+<div class="container content">
+    <div class="row">
+        <div class="col-sm-12 col-12">
+            <div class="card">
+                <div class="card-header">@Model.Name</div>
+                <div class="card-body height3">
+                    <ul class="chat-list">
+
+                        @foreach (var message in Model.Messages)
+                        {
+                            @if (message.UserId == userId)
+                            {
+                                <li class="out">
+                                    <div class="chat-img">
+                                        <img alt="Avtar" src="https://bootdey.com/img/Content/avatar/avatar6.png">
+                                    </div>
+                                    <div class="chat-body">
+                                        <div class="chat-message">
+                                            <h5>@message.User.UserName</h5>
+                                            <p>
+                                                @message.TextContent
+                                            </p>
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="in">
+                                    <div class="chat-img">
+                                        <img alt="Avtar" src="https://bootdey.com/img/Content/avatar/avatar1.png">
+                                    </div>
+                                    <div class="chat-body">
+                                        <div class="chat-message">
+                                            <h5>@message.User.UserName</h5>
+                                            <p>
+                                                @message.TextContent
+                                            </p>
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+                        }
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <hr />
+    <form asp-action="CreateComment" id="new-message-form">
+        <input type="hidden" name="ChatId" value="@Model.Id" />
+        <input type="hidden" name="UserId" value="@userId" />
+        <div class="form-group">
+            <textarea class="form-control" id="textContent" rows="3" name="TextContent"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+
+@section Scripts {
+
+    <script>
+        var current_user_name = '@ViewBag.CurrentUserName';
+        var user_id = '@userId';
+
+        var protocol = location.protocol === "https:" ? "wss:" : "ws:";
+        var wsUri = protocol + "//" + window.location.host;
+        var socket = new WebSocket(wsUri);
+        socket.onopen = e => {
+            console.log("socket opened", e);
+        };
+
+        socket.onclose = function (e) {
+            console.log("socket closed", e);
+        };
+
+        socket.onmessage = function (e) {
+            console.log(e);
+            console.log(e.data);
+
+            var rscvData = JSON.parse(e.data);
+            if (rscvData.user_id != user_id) {
+                var rsvMsg = '<li class="in"><div class="chat-img">' +
+                    '<img alt="Avtar" src="' + rscvData.img_source + '"></div>' +
+                    '<div class="chat-body"><div class="chat-message">' +
+                    '<h5>' + rscvData.current_user_name + '</h5>' +
+                    '<p>' + rscvData.text + '</p>' +
+                    '</div></div></li>'
+                $('.chat-list').append(rsvMsg);
+                $('html, body').animate({ scrollTop: $(document).height() }, 'slow');
+            }            
+        };
+
+        socket.onerror = function (e) {
+            console.error(e.data);
+        };
+
+        $("#new-message-form").on('submit', function (e) {
+            e.preventDefault();
+            var msgText = $('#textContent').val()
+            $.ajax({
+                type: "Post",
+                url: "/Chats/CreateComment",
+                data: $(this).serialize(),
+                cache: false,
+                success: function (data) {
+                    console.log(data)
+                    let myMessage = '<li class="out"><div class="chat-img">' +
+                        '<img alt="Avtar" src="https://bootdey.com/img/Content/avatar/avatar6.png"></div>' +
+                        '<div class="chat-body"><div class="chat-message">' +
+                        '<h5>' + current_user_name + '</h5>' +
+                        '<p>' + msgText + '</p>' +
+                        '</div></div></li>'
+                    $('.chat-list').append(myMessage);
+                    $('html, body').animate({ scrollTop: $(document).height() }, 'slow');
+                    var sendData = {
+                        user_id: user_id,
+                        current_user_name: current_user_name,
+                        text: msgText,
+                        img_source: "https://bootdey.com/img/Content/avatar/avatar1.png"
+                    }
+                    socket.send(JSON.stringify(sendData));
+                    $('#textContent').val('')
+                }
+            });
+        });
+    </script>
+}
+
+<!-- Modal -->
+<div class="modal fade" id="usersSelectModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form asp-action="AddUserToChat" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Adding Users to Chat</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="selectUserId" class="control-label"></label>
+                        <select id="selectUserId" name="userId" class="form-control" asp-items="ViewBag.UsersSelect">
+                            <option>-- Select User --</option>
+                        </select>
+                    </div>
+                    <input type="hidden" name="chatId" value="@Model.Id" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <input type="submit" class="btn btn-primary" value="Add User" />
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
